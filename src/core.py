@@ -1,4 +1,4 @@
-from typing import Callable, Iterable, TypeVar
+from typing import Callable, Generator, Iterable, TypeVar
 
 _T = TypeVar("_T")
 _K = TypeVar("_K")
@@ -36,3 +36,12 @@ def aggregate_by(iterable: Iterable[_T], key: Callable[[_T], _K]) -> dict[_K, li
     for elem in iterable:
         d.setdefault(key(elem), []).append(elem)
     return d
+
+
+def iterate(f: Callable[[_T], _T], x: _T = 0) -> Generator[_T, None, None]:
+    """Iterate produces an infinite sequence of x, f(x), f(f(x)), ...
+    See Clojure's iterate.
+    """
+    while True:
+        yield x
+        x = f(x)
