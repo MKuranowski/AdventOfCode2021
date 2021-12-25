@@ -1,7 +1,7 @@
+from fileinput import FileInput
 from functools import lru_cache
 
-P1_START_POS = 7  # 7 for real input, 4 for test input
-P2_START_POS = 4  # 4 for real input, 8 for test input
+from day21a import parse_player_positions
 
 BOARD_SIZE = 10
 WON_TRESHOLD = 21
@@ -18,14 +18,6 @@ ROLL_OUTPUTS: list[tuple[int, int]] = [
 ]
 
 Player = tuple[int, int]  # pos, score
-
-# class Player(NamedTuple):
-#     pos: int
-#     score: int = 0
-#
-#     def moved(self, advance: int) -> "Player":
-#         new_pos = (self.pos + advance) % BOARD_SIZE
-#         return Player(new_pos, self.score + new_pos + 1)
 
 
 def player_moved(p: Player, advance: int) -> Player:
@@ -60,8 +52,10 @@ def DFS(turn: int, p1: Player, p2: Player) -> tuple[int, int]:
 
 
 if __name__ == "__main__":
-    p1: Player = P1_START_POS - 1, 0
-    p2: Player = P2_START_POS - 1, 0
+    p1_start_pos, p2_start_pos = parse_player_positions(FileInput())
+
+    p1: Player = p1_start_pos - 1, 0
+    p2: Player = p2_start_pos - 1, 0
 
     p1_won, p2_won = DFS(0, p1, p2)
     print(max(p1_won, p2_won))

@@ -1,8 +1,7 @@
+import re
+from fileinput import FileInput
 from itertools import cycle
-from typing import Optional, Protocol
-
-P1_START_POS = 7  # 7 for real input, 4 for test input
-P2_START_POS = 4  # 4 for real input, 8 for test input
+from typing import Iterable, Optional, Protocol
 
 
 class DeterministicDice:
@@ -34,12 +33,33 @@ class Player:
         self.score += self.pos + 1  # 1 to offset from the modulus
 
 
+def parse_player_positions(input: Iterable[str]) -> tuple[int, int]:
+    p1_pos = -1
+    p2_pos = -1
+
+    for line in input:
+        m = re.match(r"Player (\d)+ starting position: (\d)+", line)
+        assert m
+        if m[1] == "1":
+            p1_pos = int(m[2])
+        elif m[1] == "2":
+            p2_pos = int(m[2])
+        else:
+            raise RuntimeError(f"invalid player: {m[1]}")
+
+    assert p1_pos >= 0
+    assert p2_pos >= 0
+    return p1_pos, p2_pos
+
+
 if __name__ == "__main__":
+    p1_start_pos, p2_start_pos = parse_player_positions(FileInput())
+
     p: Optional[Player] = None
 
     dice = DeterministicDice(100)
-    p1 = Player(P1_START_POS - 1, 10, dice)
-    p2 = Player(P2_START_POS - 1, 10, dice)
+    p1 = Player(p1_start_pos - 1, 10, dice)
+    p2 = Player(p2_start_pos - 1, 10, dice)
 
     for p in cycle((p1, p2)):
         p.move()
