@@ -1,7 +1,7 @@
 from fileinput import FileInput
 from typing import Iterable, NamedTuple
 
-# There's no corresponding input/16-test, as there are multiuple different examples provided.
+# There's no corresponding input/16-test, as there are multiple different examples provided.
 # Testing is done via `echo HEX_PACKET | python src/day16a.py`.
 
 
