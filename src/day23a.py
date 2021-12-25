@@ -4,16 +4,10 @@ from heapq import heappop, heappush
 from math import inf
 from typing import Iterable, NamedTuple
 
-# 0, 1 → to the left of room[0]
-#    2 → between room[0] and room[1]
-#    3 → between room[1] and room[2]
-#    4 → between room[2] and room[3]
-# 5, 6 → to the right of room[3]
-HALLWAY_LENGTH = 7
 
-# room[0] → outer ("window") spot
-# room[1] → inner ("hallway") spot
+HALLWAY_LENGTH = 7
 ROOMS = 4
+ROOM_SIZE = 2
 
 
 class Spot(enum.IntEnum):
@@ -39,7 +33,34 @@ class Spot(enum.IntEnum):
                 return "C"
             case Spot.D:
                 return "D"
-        raise RuntimeError()
+        raise RuntimeError("unreachable")
+
+
+# Memory layout of the Burrow implementation
+#
+# Hn == hallway[n] - represents a spot in the hallway, which can be occupied by an amphipod
+# Un == unwrapped_hallway[n] - only used in distance calculation, never stored actually
+#
+#  U0  U1  U2   U3  U4   U5  U6   U7  U8   U9  U10
+#  H0  H1  ___  H2  ___  H3  ___  H4  ___  H5  H6
+#          R01      R11      R21      R31
+#          R00      R10      R20      R30
+#
+# In handsight, it would probably be better to store spots within the room,
+# in the opposite order, so that `room[i][0]` is the hallway spot.
+#
+# The 'Spot' enum is designed in such a way, that an amphipod (= non-empty spot)
+# wants to be in the same room as its value; in other words, given an amphipod,
+# it wants to go to rooms[that_amphipod].
+
+
+def unwrap_hallway_index(i: int) -> int:
+    if i <= 1:
+        return i
+    elif i <= 5:
+        return 2*i - 1
+    else:
+        return i + 4
 
 
 class Burrow(NamedTuple):
@@ -53,24 +74,31 @@ class Burrow(NamedTuple):
         ))
 
     def _hallway_str(self) -> str:
-        return str(self.hallway[0]) \
-            + str(self.hallway[1])  \
-            + "."                  \
-            + str(self.hallway[2])  \
-            + "."                  \
-            + str(self.hallway[3])  \
-            + "."                  \
-            + str(self.hallway[4])  \
-            + "."                  \
-            + str(self.hallway[5])  \
-            + str(self.hallway[6])
+        strings = ["."] * (HALLWAY_LENGTH + ROOMS)
+        for i, spot in enumerate(self.hallway):
+            strings[unwrap_hallway_index(i)] = str(spot)
+        return "".join(strings)
 
     def __str__(self) -> str:
-        return "#############\n" \
-            f"#{self._hallway_str()}#\n" \
-            f"###{self.rooms[0][1]}#{self.rooms[1][1]}#{self.rooms[2][1]}#{self.rooms[3][1]}###\n"\
-            f"  #{self.rooms[0][0]}#{self.rooms[1][0]}#{self.rooms[2][0]}#{self.rooms[3][0]}#  \n"\
-            "  #########  \n"
+        width = HALLWAY_LENGTH + ROOMS
+        rows: list[str] = ["#" * (width + 2)]
+
+        # Add the hallway
+        rows.append("#" + self._hallway_str() + "#")
+
+        # Add the rooms
+        for i in range(ROOM_SIZE-1, -1, -1):
+            room = "#".join(str(self.rooms[j][i]) for j in range(ROOMS))
+
+            if i == ROOM_SIZE-1:
+                rows.append("###" + room + "###")
+            else:
+                rows.append("  #" + room + "#  ")
+
+        # Add the bottom border
+        rows.append("  " + "#" * (width - 2) + "  ")
+        rows.append("")  # For a final newline
+        return "\n".join(rows)
 
     def to_room(self, hallway_idx: int, room_idx: int, room_spot_idx: int) -> "Burrow":
         a = self.hallway[hallway_idx]
@@ -119,15 +147,6 @@ class State:
     def __hash__(self) -> int:
         return hash((self.burrow, self.energy))
 
-    @staticmethod
-    def unwrap_hallway_index(i: int) -> int:
-        if i <= 1:
-            return i
-        elif i <= 5:
-            return 2*i - 1
-        else:
-            return i + 4
-
     def can_move_from_spot_to_room(self, a: int, b: int) -> bool:
         left = a + 1
         right = b + 2
@@ -159,7 +178,7 @@ class State:
                 # Move into an empty room
                 if self.burrow.rooms[amphipod][0] == Spot.Empty:
                     # Calculate energy required for the move
-                    distance_to_room = abs(self.unwrap_hallway_index(idx) - 2 * (amphipod + 1))
+                    distance_to_room = abs(unwrap_hallway_index(idx) - 2 * (amphipod + 1))
                     energy_delta = amphipod.energy_multiplier() * (2 + distance_to_room)
                     yield State(
                         self.burrow.to_room(idx, amphipod, 0),
@@ -169,7 +188,7 @@ class State:
                 # Move into a room where the "window" seat is occupied by the expected amphipod
                 elif self.burrow.rooms[amphipod][0] == amphipod and \
                         self.burrow.rooms[amphipod][1] == Spot.Empty:
-                    distance_to_room = abs(self.unwrap_hallway_index(idx) - 2 * (amphipod + 1))
+                    distance_to_room = abs(unwrap_hallway_index(idx) - 2 * (amphipod + 1))
                     energy_delta = amphipod.energy_multiplier() * (1 + distance_to_room)
                     yield State(
                         self.burrow.to_room(idx, amphipod, 1),
@@ -212,7 +231,7 @@ class State:
                         or not self.can_move_from_spot_to_room(hallway_idx, room_idx):
                     continue
 
-                energy_delta = abs(self.unwrap_hallway_index(hallway_idx) - 2 * (room_idx + 1))
+                energy_delta = abs(unwrap_hallway_index(hallway_idx) - 2 * (room_idx + 1))
                 energy_delta += distance_onto_hallway
                 energy_delta *= amphipod.energy_multiplier()
                 yield State(
@@ -259,5 +278,6 @@ if __name__ == "__main__":
     ]
 
     state = State(Burrow(hallway, rooms))
+    print(state.burrow)
     state = find_cheapest(state)
     print(state.energy)
