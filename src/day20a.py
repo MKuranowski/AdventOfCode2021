@@ -1,5 +1,3 @@
-# cSpell: words BLTR
-
 from dataclasses import dataclass
 from fileinput import FileInput
 from typing import Iterable, Literal, NamedTuple
@@ -24,7 +22,7 @@ class BLTR(NamedTuple):
     r: int
 
     def within(self, x: int, y: int) -> bool:
-        return self.b <= y <= self.t and self.l <= x <= self.r
+        return self.b <= y <= self.t and self.l <= x <= self.r  # noqa: E741
 
 
 @dataclass
