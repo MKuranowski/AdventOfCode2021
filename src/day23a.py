@@ -1,6 +1,7 @@
 import enum
 from dataclasses import dataclass, field
 from heapq import heappop, heappush
+from fileinput import FileInput
 from math import inf
 from typing import Iterable, NamedTuple
 
@@ -20,6 +21,22 @@ class Spot(enum.IntEnum):
     def energy_multiplier(self) -> int:
         assert self != Spot.Empty
         return 10 ** self
+
+    @classmethod
+    def from_str(cls, x: str) -> "Spot":
+        match x:
+            case ".":
+                return Spot.Empty
+            case "A":
+                return Spot.A
+            case "B":
+                return Spot.B
+            case "C":
+                return Spot.C
+            case "D":
+                return Spot.D
+            case _:
+                raise ValueError("Invalid spot string: ", x)
 
     def __str__(self) -> str:
         match self:
@@ -72,6 +89,27 @@ class Burrow(NamedTuple):
             tuple(self.hallway),
             tuple(tuple(room) for room in self.rooms)
         ))
+
+    @classmethod
+    def from_input(cls, lines: Iterable[str]) -> "Burrow":
+        iterator = iter(lines)
+        next(iterator)  # Ignore the top border
+        next(iterator)  # Ignore the hallway, as it's initially empty
+
+        hallway: list[Spot] = [Spot.Empty] * HALLWAY_LENGTH
+        rooms: list[list[Spot]] = [[Spot.Empty] * ROOM_SIZE for _ in range(ROOMS)]
+
+        for room_spot in range(ROOM_SIZE-1, -1, -1):
+            line = next(iterator)
+
+            for room_idx in range(ROOMS):
+                # Find the char in the line representing the spot;
+                # + 3to offset initial border, times 2 to skip borders between rooms
+                char = line[3 + 2 * room_idx]
+                assert char in {"A", "B", "C", "D"}
+                rooms[room_idx][room_spot] = Spot.from_str(char)
+
+        return cls(hallway, rooms)
 
     def _hallway_str(self) -> str:
         strings = ["."] * (HALLWAY_LENGTH + ROOMS)
@@ -259,25 +297,8 @@ def find_cheapest(initial_state: State) -> State:
 
 
 if __name__ == "__main__":
-    hallway: list[Spot] = [Spot.Empty] * HALLWAY_LENGTH
+    initial_burrow = Burrow.from_input(FileInput())
+    initial_state = State(initial_burrow)
 
-    # Test input
-    # rooms: list[list[Spot]] = [
-    #     [Spot.A, Spot.B],
-    #     [Spot.D, Spot.C],
-    #     [Spot.C, Spot.B],
-    #     [Spot.A, Spot.D],
-    # ]
-
-    # Normal input
-    rooms: list[list[Spot]] = [
-        [Spot.C, Spot.D],
-        [Spot.A, Spot.A],
-        [Spot.B, Spot.C],
-        [Spot.B, Spot.D],
-    ]
-
-    state = State(Burrow(hallway, rooms))
-    print(state.burrow)
-    state = find_cheapest(state)
-    print(state.energy)
+    cheapest_end_state = find_cheapest(initial_state)
+    print(cheapest_end_state.energy)
