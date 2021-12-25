@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from heapq import heappop, heappush
 from fileinput import FileInput
 from math import inf
-from typing import Iterable, NamedTuple
+from typing import Iterable, NamedTuple, Optional
 
 
 HALLWAY_LENGTH = 7
@@ -179,15 +179,29 @@ class Burrow(NamedTuple):
 
 @dataclass(order=True)
 class State:
+    """State represents a burrow after n moves were performed.
+    To solve the challenge, we'll want to find the end state with the lowest energy.
+    """
     burrow: Burrow = field(compare=False)
     energy: int = field(default=0, compare=True)
 
     def __hash__(self) -> int:
         return hash((self.burrow, self.energy))
 
-    def can_move_from_spot_to_room(self, a: int, b: int) -> bool:
-        left = a + 1
-        right = b + 2
+    def is_end(self) -> bool:
+        for room_idx in range(ROOMS):
+            for room_spot in range(ROOM_SIZE):
+                if self.burrow.rooms[room_idx][room_spot] != room_idx:
+                    return False
+
+        assert all(s == Spot.Empty for s in self.burrow.hallway)
+        return True
+
+    def can_move_from_spot_to_room(self, hallway_idx: int, room_idx: int) -> bool:
+        """Checks if the path from the hallway spot to a room
+        is not obstructed by any other amphipod."""
+        left = hallway_idx + 1
+        right = room_idx + 2
         if left > right:
             spots = self.burrow.hallway[right:left-1]
         else:
@@ -195,73 +209,79 @@ class State:
 
         return all(spot == Spot.Empty for spot in spots)
 
-    def is_end(self) -> bool:
-        for room_idx in range(ROOMS):
-            if self.burrow.rooms[room_idx][0] != room_idx \
-                    or self.burrow.rooms[room_idx][1] != room_idx:
-                return False
+    def can_move_into_room(self, room_idx: int) -> Optional[int]:
+        """Checks if the amphipod can move into a room.
+        An amphipod can move into a room if there's an empty spot,
+        and any other amphipods below (towards the "window") are the expected/valid
+        amphipods.
 
-        assert all(s == Spot.Empty for s in self.burrow.hallway)
-        return True
+        Returns None if the move can't be performed, and a room_spot_idx otherwise.
+        """
+        for room_spot_idx in range(ROOM_SIZE):
+            occupant = self.burrow.rooms[room_idx][room_spot_idx]
+
+            if occupant == Spot.Empty:
+                return room_spot_idx
+
+            elif occupant != room_idx:
+                return None
+
+    def can_move_from_room(self, room_idx: int) -> Optional[int]:
+        """Checks if anyone from the given room should move.
+
+        Returns room_spot_idx of the amphipod to move, as long
+        as it's in the incorrect room, or any amphipods below are also in
+        the incorrect room.
+        """
+        room = self.burrow.rooms[room_idx]
+
+        # Empty room - nothing to move from
+        if room[0] == Spot.Empty:
+            return None
+
+        # Check if room is "valid" - it contains only valid amphipods or empty spots
+        # => no need to move in this case
+        if all(s == Spot.Empty or s == room_idx for s in room):
+            return None
+
+        # Find the top item
+        for idx in range(ROOM_SIZE):
+            if room[idx] == Spot.Empty:
+                return idx-1
+
+        return ROOM_SIZE - 1
 
     def possible_moves(self) -> Iterable["State"]:
+        """Generates all of the possible moves from the current state -
+        first generating all moves **to** a room, and then by
+        generating moves **from** all rooms.
+        """
         # First check if someone from the hallway can move to its room
         for idx in range(HALLWAY_LENGTH):
             amphipod = self.burrow.hallway[idx]
 
             # Check if there's an amphipod at this idx and
             # it has a free path to its room
-            if amphipod != Spot.Empty and self.can_move_from_spot_to_room(idx, amphipod):
+            if amphipod != Spot.Empty and self.can_move_from_spot_to_room(idx, amphipod) \
+                    and (insert_into_spot := self.can_move_into_room(amphipod)) is not None:
 
-                # Move into an empty room
-                if self.burrow.rooms[amphipod][0] == Spot.Empty:
-                    # Calculate energy required for the move
-                    distance_to_room = abs(unwrap_hallway_index(idx) - 2 * (amphipod + 1))
-                    energy_delta = amphipod.energy_multiplier() * (2 + distance_to_room)
-                    yield State(
-                        self.burrow.to_room(idx, amphipod, 0),
-                        self.energy + energy_delta
-                    )
+                energy_delta = abs(unwrap_hallway_index(idx) - 2 * (amphipod + 1))
+                energy_delta += ROOM_SIZE - insert_into_spot
+                energy_delta *= amphipod.energy_multiplier()
 
-                # Move into a room where the "window" seat is occupied by the expected amphipod
-                elif self.burrow.rooms[amphipod][0] == amphipod and \
-                        self.burrow.rooms[amphipod][1] == Spot.Empty:
-                    distance_to_room = abs(unwrap_hallway_index(idx) - 2 * (amphipod + 1))
-                    energy_delta = amphipod.energy_multiplier() * (1 + distance_to_room)
-                    yield State(
-                        self.burrow.to_room(idx, amphipod, 1),
-                        self.energy + energy_delta
-                    )
+                yield State(
+                    self.burrow.to_room(idx, amphipod, insert_into_spot),
+                    self.energy + energy_delta
+                )
 
         # Then, check possible moves into the hallway
         for room_idx in range(ROOMS):
+            from_spot = self.can_move_from_room(room_idx)
 
-            if self.burrow.rooms[room_idx][1] != Spot.Empty:
-                # Try to move someone from the hallway spot
-                amphipod = self.burrow.rooms[room_idx][1]
-                window_amphipod = self.burrow.rooms[room_idx][0]
-                from_spot = 1
-                distance_onto_hallway = 1
-
-                assert window_amphipod != Spot.Empty
-
-                # Skip this step is the room is occupied by correct amphipod
-                if amphipod == room_idx and window_amphipod == room_idx:
-                    continue
-
-            elif self.burrow.rooms[room_idx][0] != Spot.Empty:
-                # Try to move someone from the window spot
-                amphipod = self.burrow.rooms[room_idx][0]
-                from_spot = 0
-                distance_onto_hallway = 2
-
-                # This is only required it the spot is occupied by the incorrect amphipod
-                if amphipod == room_idx:
-                    continue
-
-            else:
-                # No one to move
+            if from_spot is None:
                 continue
+
+            amphipod = self.burrow.rooms[room_idx][from_spot]
 
             # Generate all possible spots to move to
             for hallway_idx in range(HALLWAY_LENGTH):
@@ -270,8 +290,9 @@ class State:
                     continue
 
                 energy_delta = abs(unwrap_hallway_index(hallway_idx) - 2 * (room_idx + 1))
-                energy_delta += distance_onto_hallway
+                energy_delta += ROOM_SIZE - from_spot
                 energy_delta *= amphipod.energy_multiplier()
+
                 yield State(
                     self.burrow.to_hallway(hallway_idx, room_idx, from_spot),
                     self.energy + energy_delta
@@ -279,6 +300,16 @@ class State:
 
 
 def find_cheapest(initial_state: State) -> State:
+    """Uses Dijkstra's algorithm to find the least-energy
+    solved state.
+
+    Because we don't care about the specific steps towards a solution,
+    there's no need to keep track of the `prev`/`came_from` mapping.
+
+    It takes a few seconds to find the solution, I wonder if
+    it can be improved by switching to A*; or maybe it's possible to solve
+    the task in an entirely different way...
+    """
     min_energies: dict[Burrow, float] = {initial_state.burrow: 0}
     queue: list[State] = [initial_state]
 
