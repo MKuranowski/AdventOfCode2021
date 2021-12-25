@@ -1,7 +1,7 @@
-from dataclasses import dataclass
-from typing import Optional, Union
-from fileinput import FileInput
 import re
+from dataclasses import dataclass
+from fileinput import FileInput
+from typing import Optional, Union
 
 SN = Union["SNLeaf", "SNNode"]
 

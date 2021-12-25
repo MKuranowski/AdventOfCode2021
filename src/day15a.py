@@ -1,9 +1,8 @@
+import dataclasses
 import heapq
 import math
-import dataclasses
 from fileinput import FileInput
 from typing import Iterable
-
 
 Point = tuple[int, int]
 Map = list[list[int]]

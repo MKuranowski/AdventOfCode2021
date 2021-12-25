@@ -1,5 +1,5 @@
-from math import log2
 import fileinput
+from math import log2
 
 
 def get_rating(numbers: list[int], follow_most_common: bool = True) -> int:

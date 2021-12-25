@@ -1,4 +1,5 @@
 from fileinput import FileInput
+
 from day15a import Map, a_star
 
 Tiles = list[list[Map]]

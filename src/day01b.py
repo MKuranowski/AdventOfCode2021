@@ -1,4 +1,5 @@
 import fileinput
+
 from day01a import count_increases
 
 

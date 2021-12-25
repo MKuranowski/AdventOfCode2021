@@ -1,7 +1,6 @@
 from fileinput import FileInput
 from typing import Iterable
 
-
 Node = tuple[str, set[str]]
 Graph = dict[str, Node]
 

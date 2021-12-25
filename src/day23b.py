@@ -1,8 +1,8 @@
-from math import inf
 import enum
-from heapq import heappop, heappush
-from typing import Iterable, NamedTuple, Optional
 from dataclasses import dataclass, field
+from heapq import heappop, heappush
+from math import inf
+from typing import Iterable, NamedTuple, Optional
 
 # 0, 1 → to the left of room[0]
 #    2 → between room[0] and room[1]

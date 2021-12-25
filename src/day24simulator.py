@@ -1,10 +1,9 @@
-from dataclasses import dataclass, field
-from typing import Callable, ClassVar, Iterable, MutableSequence, NewType
-from fileinput import FileInput
 import operator
+from dataclasses import dataclass, field
+from fileinput import FileInput
+from typing import Callable, ClassVar, Iterable, MutableSequence, NewType
 
 from core import split_on
-
 
 REGISTER_STRINGS = frozenset(("w", "x", "y", "z"))
 Register = NewType("Register", int)

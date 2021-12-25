@@ -1,6 +1,6 @@
 from fileinput import FileInput
 
-from core import split_on, empty_str
+from core import empty_str, split_on
 from day13a import Points, parse_folds, parse_points, perform_fold
 
 

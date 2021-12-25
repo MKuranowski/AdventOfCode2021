@@ -1,7 +1,6 @@
-from typing import Iterable
-from itertools import product
-
 from fileinput import FileInput
+from itertools import product
+from typing import Iterable
 
 Point = tuple[int, int, int]
 

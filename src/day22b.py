@@ -1,7 +1,7 @@
-from fileinput import FileInput
-from typing import NamedTuple
-from itertools import combinations
 import sys
+from fileinput import FileInput
+from itertools import combinations
+from typing import NamedTuple
 
 # This is a stupid solution, it takes 10 minutes to run
 

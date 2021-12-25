@@ -1,7 +1,7 @@
 from fileinput import FileInput
 from typing import Counter
 
-from core import split_on, empty_str
+from core import empty_str, split_on
 from day14a import parse_inertions
 
 

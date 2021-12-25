@@ -1,8 +1,7 @@
 from fileinput import FileInput
 from typing import Iterable
 
-from core import split_on, empty_str
-
+from core import empty_str, split_on
 
 Point = tuple[int, int]  # x, y
 Fold = tuple[int, int]   # fold_axis, along

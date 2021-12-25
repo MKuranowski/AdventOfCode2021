@@ -1,5 +1,6 @@
 from fileinput import FileInput
 from typing import Optional
+
 from day12a import Graph, Path, make_graph
 
 

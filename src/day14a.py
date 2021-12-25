@@ -1,7 +1,7 @@
 from fileinput import FileInput
 from typing import Counter, Iterable
 
-from core import split_on, empty_str
+from core import empty_str, split_on
 
 
 def parse_inertions(lines: Iterable[str]) -> dict[str, str]:

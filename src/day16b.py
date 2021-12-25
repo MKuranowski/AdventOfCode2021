@@ -1,6 +1,6 @@
 from fileinput import FileInput
 
-from day16a import to_binary_string, consume_packet
+from day16a import consume_packet, to_binary_string
 
 # There's no corresponding input/16-test, as there are multiuple different examples provided.
 # Testing is done via `echo HEX_PACKET | python src/day16b.py`.

@@ -1,11 +1,10 @@
 # cSpell: words BLTR
 
-from fileinput import FileInput
 from dataclasses import dataclass
+from fileinput import FileInput
 from typing import Iterable, Literal, NamedTuple
 
-from core import split_on, empty_str
-
+from core import empty_str, split_on
 
 Point = tuple[int, int]
 Enhancer = dict[int, Literal[0, 1]]

@@ -1,11 +1,11 @@
 # cSpell: words nlargest
+import operator
 from fileinput import FileInput
+from functools import reduce
 from heapq import nlargest
 from typing import Iterable
-from functools import reduce
-import operator
 
-from day09a import Point, load_heightmap, find_low_points, neighbors
+from day09a import Point, find_low_points, load_heightmap, neighbors
 
 
 def expand_basin(low_point: Point, map: list[list[int]], height: int, width: int) -> set[Point]:

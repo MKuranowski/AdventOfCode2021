@@ -1,5 +1,5 @@
-from fileinput import FileInput
 from collections import Counter
+from fileinput import FileInput
 
 
 def simulate(state: Counter[int], cycles: int) -> int:
