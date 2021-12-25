@@ -1,12 +1,14 @@
-from day17a import TARGET_RIGHT, ShotResult, shoot
+from fileinput import FileInput
+
+from day17a import BLTR, ShotResult, shoot
 
 
-def brute_force_all() -> int:
+def brute_force_all(target: BLTR) -> int:
     count = 0
 
-    for vel_x in range(1, TARGET_RIGHT+1):
+    for vel_x in range(1, target.right+1):
         for vel_y in range(-100, 500):
-            result, _ = shoot(vel_x, vel_y)
+            result, _ = shoot(vel_x, vel_y, target)
 
             if result == ShotResult.WITHIN:
                 count += 1
@@ -18,4 +20,5 @@ def brute_force_all() -> int:
 
 
 if __name__ == "__main__":
-    print(brute_force_all())
+    target = BLTR.from_input(next(FileInput()).strip())
+    print(brute_force_all(target))
