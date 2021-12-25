@@ -1,6 +1,6 @@
 from typing import NamedTuple
 
-# This is the simplified progra; it can only perform the following operations.
+# This is the simplified program; it performs only 2 operations:
 #
 # If the digit-processing part has a `div z 1`, the whole digit processing is an OP1.
 # The parameter is the number at the last `y`.
